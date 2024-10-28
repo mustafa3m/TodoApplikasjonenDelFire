@@ -1,0 +1,101 @@
+﻿@page "/todos"
+
+@inject TodoService TodoService
+@inject IJSRuntime JS // Inject JavaScript runtime
+@inject NavigationManager navigation
+
+<h3 class="text-center mb-4">Todo List</h3>
+
+<div class="container mt-4">
+
+
+
+
+    <div class="input-group mb-3">
+        <input class="form-control" @bind="newTodoTitle" placeholder="Enter a new task..." />
+        <button class="btn btn-primary" @onclick="AddTodo">Add Todo</button>
+    </div>
+
+    <ul class="list-group">
+        @foreach (var todo in TodoService.Todos)
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <input class="form-check-input me-2" type="checkbox" @onclick="() => CompleteTodo(todo)" />
+                    <span>@todo.Title</span>
+                </div>
+                <button class="btn btn-danger btn-sm" @onclick="() => OpenDeleteModal(todo)">Delete</button>
+            </li>
+        }
+    </ul>
+
+
+
+    <!-- Modal for deletion confirmation -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Delete Confirmation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete this task?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                   
+                    <button id="deleteModal" type="button" class="btn btn-danger" @onclick="DeleteTodo">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @code {
+        private string? newTodoTitle;
+        private TodoItem? currentTodoToDelete; // Holds the item for deletion
+
+        
+
+
+        private void AddTodo()
+        {
+            if (!string.IsNullOrWhiteSpace(newTodoTitle))
+            {
+                TodoService.AddTodo(newTodoTitle);
+                newTodoTitle = string.Empty; // Clear input after adding
+            }
+        }
+
+
+        private async Task OpenDeleteModal(TodoItem todo)
+        {
+            currentTodoToDelete = todo; // Set the current todo to delete
+            await JS.InvokeVoidAsync("modalHelpers.showModal", "deleteModal"); // Show the modal
+        }
+
+        private async Task DeleteTodo()
+        {
+            if (currentTodoToDelete != null)
+            {
+                TodoService.RemoveTodoItem(currentTodoToDelete);
+                currentTodoToDelete = null; // Clear the reference after deletion
+                await JS.InvokeVoidAsync("modalHelpers.hideModal", "deleteModal"); // Hide the modal after deletion
+                StateHasChanged(); // Force the UI to refresh
+            }
+        }
+
+        private void CompleteTodo(TodoItem todo)
+        {
+            TodoService.MarkAsComplete(todo);
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                await JS.InvokeVoidAsync("modalHelpers.hideModal", "deleteModal");
+            }
+        }
+    }
+</div>

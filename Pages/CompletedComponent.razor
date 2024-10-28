@@ -1,0 +1,27 @@
+﻿@page "/Completed"
+
+
+@inject TodoService? TodoService  
+
+<div class="container mt-4">
+    <h3 class="text-center mb-4">Completed Tasks</h3>
+
+    <ul class="list-group">
+        @foreach (var todo in TodoService.GetCompletedTodos())
+        {
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>@todo.Title</span>
+                <button class="btn btn-warning btn-sm" @onclick="() => UndoComplete(todo)">Undo</button>
+            </li>
+        }
+    </ul>
+</div>
+
+@code {
+    private void UndoComplete(TodoItem todo)
+    {
+        TodoService.UndoComplete(todo);
+    }
+}
+
+
