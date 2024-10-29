@@ -1,27 +1,53 @@
 ﻿@page "/todo"
 
-@inject TodoService? TodoService 
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+@inject TodoService TodoService
 
-
-<div class="container mt-4 ">
+<div class="container mt-4">
     <h3 class="text-center mb-4">Application Todo</h3>
 
+    @if (isLoading)
+    {
+        <div class="text-center">Loading inn...</div>
+    }
+    else if (!isAuthenticated)
+    {
+        <div class="alert alert-warning text-center">
+            Du må være logget inn for å se Todo-listen.
+        </div>
+    }
+    else
+    {
+        <div class="d-flex justify-content-center mb-4">
+            <button class="btn btn-primary mx-2" @onclick="ShowTodos">Show Todos</button>
+            <button class="btn btn-success mx-2" @onclick="ShowCompleted">Show Completed</button>
+        </div>
 
-
-    <div class="d-flex justify-content-center mb-4">
-        <button class="btn btn-primary mx-2" @onclick="ShowTodos">Show Todos</button>
-        <button class="btn btn-success mx-2" @onclick="ShowCompleted">Show Completed</button>
-    </div>
-
-    <div class="mt-4">
-        <DynamicComponent Type="currentComponent" Parameters="componentParameters" />
-    </div>
+        <div class="mt-4">
+            <DynamicComponent Type="currentComponent" Parameters="componentParameters" />
+        </div>
+    }
 </div>
 
 @code {
     private Type currentComponent = typeof(TodoComponent);
     private Dictionary<string, object> componentParameters = new Dictionary<string, object>();
+    private bool isAuthenticated;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isAuthenticated = await AuthService.IsAuthenticated();
+        isLoading = false;
+
+        if (!isAuthenticated)
+        {
+            NavigationManager.NavigateTo("/login"); // Omdiriger til innlogging
+        }
+    }
 
     private void ShowTodos() => currentComponent = typeof(TodoComponent);
     private void ShowCompleted() => currentComponent = typeof(CompletedComponent);
 }
+
